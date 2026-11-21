@@ -9,9 +9,10 @@ instrument_update,dac i_return
         law 4
         dac i_countdown
         jmp i_begin
- i_skip,lac i_countdown
+i_skip,lac i_countdown
         sub [1]
         dac i_countdown
+        cla
         eem
         jmp i i_return
 i_begin,eem
@@ -37,10 +38,9 @@ i_begin,eem
         add [0d32]
         rar 6s
         and [01777]
-        dac i_decimal
-        law i_chars+0d5
-        dac i_textptr
-        jsp i_format
+        eem
+        dac i [instrument_radius:0]
+        lem
         eem
         lac i [ax:0]
         lem
@@ -75,90 +75,29 @@ i_begin,eem
         add [0d16]
         rar 5s
         and [01777]
-        dac i_decimal
-        law i_chars+0d16
-        dac i_textptr
-        jsp i_format
+        eem
+        dac i [instrument_speed:0]
+        lem
         lac i_speed2
         mul i_radius
         dac i_high
         dio i_low
         jsp i_extract12
         dac i_energy128
-        law i_bound
-        dac i_src
-        lac i_energy128
         sub [0d252]
-        sma
+        spa
+        jmp i_bound_case
+        sub [0d9]
+        spa
         jmp i_near_case
+        law 2
         jmp i_class
-i_near_case,law i_near
-        dac i_src
-        lac i_energy128
-        sub [0d261]
-        sma
-        jmp i_escape_case
+i_near_case,law 1
         jmp i_class
-i_escape_case,law i_escape
-        dac i_src
-i_class,law i_chars+0d22
-        dac i_textptr
-        law i 0d8
-        dac i_left
-i_classcopy,lac i i_src
-        dac i i_textptr
-        idx i_src
-        idx i_textptr
-        isp i_left
-        jmp i_classcopy
-        law i_chars
-        dac i_src
-        lac [instrument_text:0]
-        dac i_dst
-        law i 0d15
-        dac i_left
-i_pack,lac i i_src
-        sal 9s
-        dac i_temp
-        idx i_src
-        lac i i_src
-        ior i_temp
-        eem
-        dac i i_dst
-        lem
-        idx i_src
-        idx i_dst
-        isp i_left
-        jmp i_pack
-        // Fixed-position native text: update only glyph words after the
-        // previous scan has completed. Never rebuild its point/scale commands.
-        eem
-        lac i [instrument_start:0]
-        lem
-        sza i
-        jmp i_done
-        add [3]
-        dac i_dst
-        law i_chars
-        dac i_src
-        law i 0d30
-        dac i_left
-i_patch_glyph,lac i i_src
-        sub [0d32]
-        sal 1s
-        add [gt_char_map:0]
-        dac i_fontptr
-        eem
-        lac i i_fontptr
-        dac i i_dst
-        lem
-        idx i_src
-        lac i_dst
-        add [5]
-        dac i_dst
-        isp i_left
-        jmp i_patch_glyph
-i_done,eem
+i_bound_case,cla
+i_class,eem
+        dac i [instrument_energy:0]
+        law 1
         jmp i i_return
 // Integer square root, exact floor, at most nine iterations; no floating point.
 i_sqrt,dap i_sqrtret
@@ -215,37 +154,6 @@ i_extract12,dap i_extractret
         sal 5s
         ior i_low
         jmp i i_extractret
-// Three decimal digits with a fixed decimal point after the first digit.
-i_format,dap i_formatret
-        dzm i_digit
-i_hundreds,lac i_decimal
-        sub [0d100]
-        spa
-        jmp i_write_hundred
-        dac i_decimal
-        idx i_digit
-        jmp i_hundreds
-i_write_hundred,lac i_digit
-        add [0d48]
-        dac i i_textptr
-        idx i_textptr
-        idx i_textptr
-        dzm i_digit
-i_tens,lac i_decimal
-        sub [0d10]
-        spa
-        jmp i_write_ten
-        dac i_decimal
-        idx i_digit
-        jmp i_tens
-i_write_ten,lac i_digit
-        add [0d48]
-        dac i i_textptr
-        idx i_textptr
-        lac i_decimal
-        add [0d48]
-        dac i i_textptr
-        jmp i i_formatret
 i_return,0
 i_countdown,0
 i_value,0
@@ -254,22 +162,13 @@ i_root,0
 i_radius,0
 i_speed2,0
 i_energy128,0
-i_decimal,0
 i_temp,0
 i_low,0
 i_high,0
-i_textptr,0
-i_digit,0
-i_left,0
-i_src,0
-i_dst,0
-i_fontptr,0
 i_bit,0
 i_trial,0
 i_sqrtret,0
 i_squareret,0
 i_extractret,0
-i_formatret,0
-#include "../generated/instrument-text.ac"
 constants
 assert . < 010000, "instrument code exceeds field 3"

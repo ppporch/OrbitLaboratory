@@ -2,17 +2,12 @@
 // the next scene is changed. Only the current marker is drawn; the viewer
 // supplies phosphor persistence. No software history or fading work remains.
 render,dap render_ret
-        eem
-        jsp i [instrument_update:3]
-        lem
+        lac scene_ready
+        sza
+        jmp update_scene
         jda gframe_begin
         frame_buffer
-        0d1650
-        // The bundled frame builder resets metadata and setup, not list data.
-        // Keep the completed immutable prefix in place; only its tail changes.
-        lac static_end
-        sza
-        jmp reuse_prefix
+        0d1540
         jda gvtext
         0d356; 0d952; 0; title
         law planet_outline
@@ -38,13 +33,47 @@ outline_loop,lac i outline_ptr
         0d190; 0d110; 1; controls_one
         jda gtext
         0d190; 0d78; 1; controls_two
-        lac gf_write
-        dac instrument_start
-        jsp draw_instrument
-        lac gf_write
-        dac static_end
-        jmp draw_craft
-reuse_prefix,dac gf_write
+        jda gtext
+        0d300; 0d900; 1; radius_caption
+        jda gtext
+        0d454; 0d900; 1; speed_caption
+        jda glabel_define
+        radius_label; 4; 0d370; 0d900; 1
+        jda glabel_define
+        speed_label; 4; 0d524; 0d900; 1
+        jda glabel_define
+        energy_label; 0d8; 0d608; 0d900; 1
+        jda glabel_define
+        status_label; 0d17; 0d420; 0d160; 1
+        jda ggroup_define
+        craft_group; 0d12
+        jsp ggroup_end
+        jsp gframe_end
+        sza
+        jmp render_fault
+        law 1
+        dac scene_ready
+update_scene,
+        eem
+        jsp i [instrument_update:3]
+        lem
+        sza
+        jsp publish_instruments
+        lac screen_x
+        sas shown_x
+        jmp update_craft
+        lac screen_y
+        sas shown_y
+        jmp update_craft
+        jmp label_ready
+update_craft,jda ggroup_replace
+        craft_group; craft_scratch
+        sza
+        jmp render_fault
+        lac screen_x
+        dac shown_x
+        lac screen_y
+        dac shown_y
 draw_craft,lac screen_x
         sub [4]
         dac lx0
@@ -65,6 +94,9 @@ draw_craft,lac screen_x
         add [4]
         dac ly1
         jsp draw_line
+        jsp ggroup_end
+        sza
+        jmp render_fault
 label_ready,
         // Select using explicit branches; strings are addresses in field 0.
         lac status
@@ -83,19 +115,82 @@ choose_stop,lac status
         law edge_label
         jmp chose
 choose_impact,law impact_label
-chose,  dac state_label
-        jda gtext
-        0d420; 0d160; 1
-state_label,0
-        jsp gframe_end
+chose,  sad shown_status
         jmp i render_ret
-draw_instrument,dap instrument_ret
-        jda gtext
-        0d300; 0d900; 1; instrument_text
-        jmp i instrument_ret
-instrument_ret,0
-instrument_start,0
-instrument_text,ascii "R/R0 0.00  V/V0 0.00  BOUND   "
+        dac shown_status
+        dac status_source
+        jda glabel_text
+        status_label
+status_source,0
+        sza
+        jmp render_fault
+        jmp i render_ret
+
+publish_instruments,dap publish_ret
+        lac instrument_radius
+        sad shown_radius
+        jmp publish_speed
+        dac shown_radius
+        dac radius_value
+        jda glabel_number
+        radius_label
+radius_value,0
+        2
+        sza
+        jmp render_fault
+publish_speed,lac instrument_speed
+        sad shown_speed
+        jmp publish_energy
+        dac shown_speed
+        dac speed_value
+        jda glabel_number
+        speed_label
+speed_value,0
+        2
+        sza
+        jmp render_fault
+publish_energy,lac instrument_energy
+        sad shown_energy
+        jmp i publish_ret
+        dac shown_energy
+        add [energy_names]
+        dac energy_ptr
+        lac i energy_ptr
+        dac energy_source
+        jda glabel_text
+        energy_label
+energy_source,0
+        sza
+        jmp render_fault
+        jmp i publish_ret
+
+render_fault,dac gf_fault
+        jmp i render_ret
+publish_ret,0
+scene_ready,0
+shown_x,-1
+shown_y,-1
+shown_status,0
+shown_radius,-1
+shown_speed,-1
+shown_energy,-1
+instrument_radius,0
+instrument_speed,0
+instrument_energy,0
+energy_ptr,0
+energy_names, bound_text; near_text; escape_text
+bound_text,ascii "BOUND"
+near_text,ascii "NEAR ESC"
+escape_text,ascii "ESCAPING"
+radius_caption,ascii "R/R0"
+speed_caption,ascii "V/V0"
+radius_label,0; 0; 0
+speed_label,0; 0; 0
+energy_label,0; 0; 0
+status_label,0; 0; 0
+craft_group,0; 0; 0
+craft_scratch,
+        table 0d12,0
 draw_line,dap line_ret
         jda gline
 lx0,0
@@ -104,7 +199,6 @@ lx1,0
 ly1,0
         jmp i line_ret
 render_ret,0
-static_end,0
 line_ret,0
 outline_ptr,0
 outline_left,0

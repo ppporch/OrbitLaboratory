@@ -1,8 +1,8 @@
 # Bundled P1GL subset
 
-Source: https://github.com/ppporch/P1GL, snapshot from commit c016bac.
+Source: https://github.com/ppporch/P1GL, snapshot from commit 3febfbb.
 The point, line, native/vector text and retained-frame modules are included,
-with the generated font and its original notice. Code is MIT (see LICENSE in this directory);
+with the retained group and label module, plus the generated font and its original notice. Code is MIT (see LICENSE in this directory);
 font data use the separate terms in fonts/HERSHEY-NOTICE.txt.
 
 gline.am1 includes the same short-vector fast path being developed in P1GL:

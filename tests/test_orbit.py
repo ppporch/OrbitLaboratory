@@ -81,7 +81,7 @@ def main():
         sx=512+trunc(x,128)+trunc(x,512);syy=530+trunc(y,128)+trunc(y,512)
         assert d['vectors'][-2:]==[((sx-4,syy),(sx+4,syy)),((sx,syy-4),(sx,syy+4))]
         assert all(0<=v<=1023 for edge in d['vectors'] for p in edge for v in p)
-    report.append(dict(case='phosphor_only_animation',frames=140,marker_positions_checked=140,fixed_vector_count=vector_count,capacity=1650,max_words=max(map(len,lists)),fault=0))
+    report.append(dict(case='phosphor_only_animation',frames=140,marker_positions_checked=140,fixed_vector_count=vector_count,capacity=1540,max_words=max(map(len,lists)),fault=0))
     report.append(dict(case='production_loop',paused_steps=0,running_steps=3,frames_each=3))
     subprocess.run([os.environ['AM1'],'-d','-S','../src/orbit.am1'],cwd=B,check=True,capture_output=True)
     (B/'validation.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))

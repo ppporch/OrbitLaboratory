@@ -73,8 +73,8 @@ circle therefore reads 1.00 / 1.00; the elliptical launch reads 1.00 / 0.75.
 **BOUND**, **NEAR ESC** or **ESCAPING** reports the sign of the specific orbital
 energy, with a narrow uncertainty band around escape. It is a trajectory-energy
 classification, not a prediction that the spacecraft will avoid an impact.
-Readings update once every five display frames, approximately a few times a
-second. The fixed-width display words are rebuilt only when a sample changes.
+Readings are sampled once every five display frames. P1GL updates the
+fixed-width labels when their values change.
 They are estimates: distance has roughly 0.01 resolution, while speed's integer
 square-root quantization can introduce about 0.02 of the circular speed.
 The velocity calculation removes the integrator's half-step offset before
@@ -89,11 +89,10 @@ table indexed by squared radius. Force products round to nearest using the
 hardware multiply option's full result. CPU execution, rather than host code,
 updates every displayed orbit.
 
-The fixed title, central body and control labels are retained in the display
-list. Only the spacecraft marker and status are rebuilt after each refresh.
-The marker position updates every physics step. This adapter relies on the pinned
-P1GL frame builder resetting its cursor without clearing list data; the tests
-verify the retained prefix across renders.
+Orbit builds the title, central body, captions and controls once. A P1GL
+retained group holds the spacecraft marker, which is replaced when its screen
+position changes. Updatable P1GL labels hold the radius, speed, energy class
+and run status. The marker and readings update between completed scans.
 
 The force table, finite step and fixed-point rounding introduce error. In the
 2,000-step circular check the radius ranges about 0.947–1.023; this is an
@@ -110,7 +109,7 @@ Bill's resident PENMENU code and state. The vector font remains read-only.
 The program does not read or write tape/drum media. `make test` uses an isolated
 CPU and captured display lists, not the running emulator.
 
-P1GL source is bundled for independent builds, pinned to P1GL commit `c016bac`, with
+P1GL source is bundled for independent builds, pinned to P1GL commit `3febfbb`, with
 its tested short-line fast path: lines whose components fit a single
 native vector avoid a CPU walk through every intermediate pixel. See
 [p1gl/README.md](p1gl/README.md) and [validation](docs/VALIDATION.md).

@@ -1,0 +1,61 @@
+{
+  "method": "Pi monotonic time between adjacent observed frame completions, 2 ms polling, 20 warmup frames, 250 measured intervals per build, running circular orbit and display viewer open",
+  "released": {
+    "sha256": "f82e8b3de4b848b08da20b3733dd27d4c30a7b6685f3a6feb5e4fbd080d356f1",
+    "timing": {
+      "ordinary": {
+        "count": 200,
+        "mean_ms": 41.05,
+        "median_ms": 40.62,
+        "p95_ms": 42.65,
+        "max_ms": 43.13
+      },
+      "instrument_sample": {
+        "count": 50,
+        "mean_ms": 52.51,
+        "median_ms": 52.94,
+        "p95_ms": 53.59,
+        "max_ms": 55.17
+      }
+    },
+    "final": {
+      "gf_fault": 0,
+      "fault": 0,
+      "gf_used": 1496,
+      "steps": 272,
+      "frames": 271,
+      "buffer_guard": 42798,
+      "run_enabled": 32,
+      "status": 0
+    }
+  },
+  "retained": {
+    "sha256": "83c81529710b97740e5e9509a2c88017c93fb1f12aa5a8dd6c948c5920e7fa62",
+    "timing": {
+      "ordinary": {
+        "count": 200,
+        "mean_ms": 36.93,
+        "median_ms": 36.34,
+        "p95_ms": 38.52,
+        "max_ms": 40.07
+      },
+      "instrument_sample": {
+        "count": 50,
+        "mean_ms": 41.03,
+        "median_ms": 40.49,
+        "p95_ms": 44.67,
+        "max_ms": 44.8
+      }
+    },
+    "final": {
+      "gf_fault": 0,
+      "fault": 0,
+      "gf_used": 1516,
+      "steps": 272,
+      "frames": 271,
+      "buffer_guard": 42798,
+      "run_enabled": 32,
+      "status": 0
+    }
+  }
+}

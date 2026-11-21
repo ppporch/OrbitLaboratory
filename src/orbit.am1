@@ -2,6 +2,7 @@ Orbit Laboratory -- P1GL / native Type 340, first interactive prototype
 #ifndef ORBIT_FRAME_COUNT
 #define ORBIT_FRAME_COUNT 0d3
 #endif
+#define P1GL_RETAINED
 #include "../ui/menu.ah"
 100/
 go, lem
@@ -206,10 +207,11 @@ test_ptr,0
 #include "../p1gl/src/gline.am1"
 #include "../p1gl/src/gtext.am1"
 #include "../p1gl/src/gframe.am1"
+#include "../p1gl/src/gretained.am1"
 #include "../p1gl/src/gvtext.am1"
 constants
 frame_buffer,0
-frame_buffer + 0d1650/
+frame_buffer + 0d1540/
 buffer_guard,0123456
 assert . < 07751, "Orbit Laboratory exceeds code/list field"
 #include "../generated/force.ac"

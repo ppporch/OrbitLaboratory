@@ -68,7 +68,7 @@ scene contained 24 visible trail segments across all eight intensity levels;
 reference circle. This mean includes CPU shading and display work; it is
 not a worst-case guarantee. See fade-live-validation.json and fade-screen.png.
 
-## Phosphor-only motion (current build)
+## Phosphor-only motion
 
 Software trail geometry, history buffers, angle calculation and fading flags
 are removed. The viewer supplies phosphor persistence. The marker is projected
@@ -90,7 +90,7 @@ central body and current moving marker, with viewer persistence. No phosphor
 or viewer settings were changed. See phosphor-live-validation.json and
 phosphor-screen.png. The previous source and core were backed up before loading.
 
-## Instruments and PENMENU (current checkpoint)
+## Instruments and PENMENU (released baseline)
 
 The panel displays normalized radius R/R0, instantaneous speed V/V0 and
 BOUND / NEAR ESC / ESCAPING. It recovers instantaneous velocity from the
@@ -124,3 +124,29 @@ These are observations, not deadline guarantees. Further tuning is deferred.
 Checkpoint: development paused at Phillip's request. Remaining optional work
 is to assess visible text stability with Phillip and, if needed, reduce the
 sampled-frame work further. No software trail or fading was reintroduced.
+
+## Retained marker and instrument labels
+
+The spacecraft marker uses a 12-word P1GL drawing group. Radius and speed
+use fixed-width numeric labels, and energy class and run status use text
+labels. Orbit builds the fixed scene once. The display tests verify 140
+marker positions, instrument formatting and cadence, and the usual orbit
+and pen controls. The retained scene used 1,516 of its 1,540 display words in
+the live circular run.
+
+Both builds were timed on the same Pi with the viewer open and the circular
+orbit running. A local probe polled the completed frame counter at roughly
+2 ms intervals. It discarded 20 warm-up frames and collected 250 adjacent
+completion intervals per build. The instrument cadence was one sample every
+five frames. Some samples leave one or more label values unchanged.
+
+| Frame type | Samples per build | Released mean | Retained mean | Released p95 | Retained p95 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Ordinary | 200 | 41.05 ms | 36.93 ms | 42.65 ms | 38.52 ms |
+| Instrument sample | 50 | 52.51 ms | 41.03 ms | 53.59 ms | 44.67 ms |
+
+The difference between the sample-frame and ordinary-frame means fell from
+11.46 ms to 4.10 ms. These are live completion intervals with polling
+granularity. They do not measure perceived flicker or guarantee future frame
+times. Both runs had zero program and display faults. Binary hashes and full
+statistics are recorded in [retained-live.json](retained-live.json).
