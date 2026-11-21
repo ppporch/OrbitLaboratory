@@ -1,0 +1,13 @@
+{
+  "frames": 316,
+  "steps": 317,
+  "fault": 0,
+  "status": 0,
+  "gf_fault": 0,
+  "gf_used": 1346,
+  "buffer_guard": 42798,
+  "running": true,
+  "seconds": 12.00061097193975,
+  "frames_delta": 316,
+  "mean_frame_ms": 37.97661699980934
+}

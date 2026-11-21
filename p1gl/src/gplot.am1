@@ -1,0 +1,36 @@
+// Type 340 point. jda gplot; X_VALUE; Y_VALUE. True coordinates 0..1023.
+// Same bank, non-reentrant, writable code; AC/IO clobbered.
+// G_FRAME owns recording and immediate-list lifetimes; no Type 30 IOTs.
+#include "type340.ah"
+gplot, 0
+        dac gp_ret
+        lac i gp_ret
+        dac gp_x
+        idx gp_ret
+        lac i gp_ret
+        dac gp_y
+        idx gp_ret
+        jsp gf_enter
+        law 2
+        dac gf_need
+        jsp gf_reserve
+        lac gf_fault
+        sza
+        jmp gp_done
+        lac gp_y
+        ior [T_Y | T_POINT]
+        dac i gf_write
+        idx gf_write
+        lac gp_x
+        ior [T_SHOW | T_POINT]
+        dac i gf_write
+        idx gf_write
+        lac gf_recording
+        sza
+        idx gf_points
+gp_done,
+        jsp gf_leave
+        jmp i gp_ret
+gp_ret, 0
+gp_x, 0
+gp_y, 0

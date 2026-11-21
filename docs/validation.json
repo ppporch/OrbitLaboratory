@@ -1,0 +1,49 @@
+[
+  {
+    "case": "circle",
+    "steps": 2000,
+    "min_radius": 0.9470197712508321,
+    "max_radius": 1.0227586682544885,
+    "status": 0,
+    "cpu_matches_integer_model": true
+  },
+  {
+    "case": "ellipse",
+    "steps": 2000,
+    "min_radius": 0.3946100760547888,
+    "max_radius": 1.0152001831267812,
+    "status": 0,
+    "cpu_matches_integer_model": true
+  },
+  {
+    "case": "escape",
+    "steps": 32,
+    "min_radius": 1.0024403359787881,
+    "max_radius": 2.2844855873082097,
+    "status": 2,
+    "cpu_matches_integer_model": true
+  },
+  {
+    "case": "impact",
+    "steps": 18,
+    "min_radius": 0.1143548341598299,
+    "max_radius": 0.9981215238182193,
+    "status": 1,
+    "cpu_matches_integer_model": true
+  },
+  {
+    "case": "phosphor_only_animation",
+    "frames": 140,
+    "marker_positions_checked": 140,
+    "fixed_vector_count": 163,
+    "capacity": 1650,
+    "max_words": 1538,
+    "fault": 0
+  },
+  {
+    "case": "production_loop",
+    "paused_steps": 0,
+    "running_steps": 3,
+    "frames_each": 3
+  }
+]

@@ -1,0 +1,231 @@
+Orbit Laboratory -- P1GL / native Type 340, first interactive prototype
+#ifndef ORBIT_FRAME_COUNT
+#define ORBIT_FRAME_COUNT 0d3
+#endif
+#include "../ui/menu.ah"
+100/
+go, lem
+        lsm
+        cbs
+#ifdef ORBIT_ELLIPSE
+        jsp reset_ellipse
+#else
+        jsp reset_circle
+#endif
+#ifdef ORBIT_TEST
+#ifdef ORBIT_VY
+        lac [ORBIT_VY]
+        dac vy
+#endif
+        law i ORBIT_STEPS
+        dac test_left
+        lac [030000]
+        dac test_ptr
+physics_test,jsp advance
+        lac px
+        eem
+        dac i test_ptr
+        lem
+        idx test_ptr
+        lac py
+        eem
+        dac i test_ptr
+        lem
+        idx test_ptr
+        isp test_left
+        jmp physics_test
+        hlt
+#else
+#ifndef ORBIT_FRAME_TEST
+        lac [2000]
+        iot 2032               // BBN clock milliseconds
+ #endif
+        jsp read_switches
+        lac switches
+        dac previous
+        and [040]
+        dac run_enabled
+        jsp menu_init
+main,
+#ifndef ORBIT_FRAME_TEST
+        iot 32
+        dio frame_start
+#endif
+        jsp controls
+        jsp menu_service
+        lac status
+        sza
+        jmp draw
+        lac run_enabled
+        sza i
+        jmp maybe_step
+        jsp advance
+        jmp draw
+maybe_step,lac edges
+        and [020]
+        ior step_request
+        sza
+        jsp advance
+ draw,  dzm step_request
+        jsp render
+        lac gf_fault
+        sza
+        jmp display_fault
+        jsp gframe_refresh
+        lac gf_fault
+        sza
+        jmp display_fault
+        idx frames
+#ifdef ORBIT_FRAME_TEST
+        lac frames
+        sub [ORBIT_FRAME_COUNT]
+        sma
+        hlt
+        jmp main
+#else
+wait_frame,iot 32
+        dio now_ms
+        lac now_ms
+        sub frame_start
+        spa
+        add [0d60000]
+        sub [0d25]
+        spa
+        jmp wait_frame
+        jmp main
+#endif
+#endif
+display_fault,lac gf_fault
+        dac fault
+        hlt
+read_switches,dap switch_ret
+        cla
+        szs 010
+        ior [040]
+        szs 020
+        ior [020]
+        szs 030
+        ior [010]
+        szs 040
+        ior [04]
+        szs 050
+        ior [02]
+        szs 060
+        ior [01]
+        dac switches
+        jmp i switch_ret
+controls,dap controls_ret
+        jsp read_switches
+        lac previous
+        xor switches
+        and [040]
+        sza
+        jmp sync_run
+        jmp after_run
+sync_run,lac switches
+        and [040]
+        dac run_enabled
+after_run,lac previous
+        cma
+        and switches
+        dac edges
+        lac switches
+        dac previous
+        lac edges
+        and [02]
+        sza
+        jsp reset_circle
+        lac edges
+        and [01]
+        sza
+        jsp reset_ellipse
+        lac edges
+        and [010]
+        sza
+        jsp slower
+        lac edges
+        and [04]
+        sza
+        jsp faster
+        jmp i controls_ret
+slower,dap speed_ret
+        lac vx
+        sar 3s
+        dac delta
+        lac vx
+        sub delta
+        dac vx
+        lac vy
+        sar 3s
+        dac delta
+        lac vy
+        sub delta
+        dac vy
+        jmp i speed_ret
+faster,dap speed_ret
+        // Bound velocity before multiplication/drift to avoid wrap after
+        // repeated boosts. The cap is > twice the circular launch speed.
+        lac vx
+        spa
+        cma
+        sub [0d2048]
+        sma
+        jmp i speed_ret
+        lac vy
+        spa
+        cma
+        sub [0d2048]
+        sma
+        jmp i speed_ret
+        lac vx
+        sar 3s
+        add vx
+        dac vx
+        lac vy
+        sar 3s
+        add vy
+        dac vy
+        jmp i speed_ret
+#include "menu.ac"
+#include "physics.ac"
+#include "render.ac"
+frames,0
+fault,0
+switch_ret,0
+controls_ret,0
+speed_ret,0
+switches,0
+previous,0
+edges,0
+delta,0
+frame_start,0
+now_ms,0
+test_left,0
+test_ptr,0
+#include "../p1gl/src/gplot.am1"
+#include "../p1gl/src/gline.am1"
+#include "../p1gl/src/gtext.am1"
+#include "../p1gl/src/gframe.am1"
+#include "../p1gl/src/gvtext.am1"
+constants
+frame_buffer,0
+frame_buffer + 0d1650/
+buffer_guard,0123456
+assert . < 07751, "Orbit Laboratory exceeds code/list field"
+#include "../generated/force.ac"
+bank 3
+0000/
+#include "instruments.ac"
+bank 4
+0000/
+#include <PENMENU/penmenu.ac>
+constants
+assert . < 010000, "PENMENU exceeds field 4"
+bank 1
+04000/
+#include <PENMENU/penmenulist.ac>
+menu_resume,scale(0) intensity(5) lpoff next(subroutine)
+        jump frame_buffer:0 next(parameter)
+assert . < 010000, "menu list exceeds field 1"
+bank 0
+start go:0

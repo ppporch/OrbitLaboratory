@@ -1,0 +1,172 @@
+/* Executes the installed pdp1.o in a separate process, with no panel, debugger,
+ * networking, files/devices, or running-emulator state. CPU execution is real;
+ * Type 30 IOTs are captured with immediate completion: this verifies CPU
+ * linkage and coordinate words, NOT device timing or visual rendering. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdatomic.h>
+#include <time.h>
+#include "pdp1.h"
+#include "configuration.h"
+
+#ifndef RUNNER_CYCLE_LIMIT
+#define RUNNER_CYCLE_LIMIT 2000000
+#endif
+
+extern bool lailiaEnabled, core1DEnabled, all1DEnabled;
+_Atomic int ad1Work;
+static FILE *trace;
+static FILE *events;
+static FILE *lists;
+static unsigned tape[65536*2], tapeCount, tapeIndex;
+static int tapeMode;
+static unsigned menuScans, testPenPending, testPenRaw, testPenTime;
+void ad1Service(PDP1 *p) { (void)p; }
+void ad1ThrottleWait(PDP1 *p, uint64_t n) { (void)p; (void)n; }
+uint64_t gettime(void) { return 0; }
+ConfigurationP getConfiguration(void) { return NULL; }
+ConfigurationSettingP findConfigurationSetting(ConfigurationP p, char *s)
+{ (void)p; (void)s; return NULL; }
+void updatelights(PDP1 *p, Panel *q) { (void)p; (void)q; }
+void updatelights_pwm(Panel *p, int n) { (void)p; (void)n; }
+void dynamicIotProcessorDoPoll(PDP1 *p) { (void)p; }
+int dynamicIotProcessor(PDP1 *p, int dev, int pulse, int completion)
+{
+    (void)completion;
+    if (pulse) fprintf(events,"%02o %06o %06o %06o\n",dev,p->ac,p->io,p->mb);
+#ifdef P1GL_TYPE340_TEST
+    if (dev==015) {
+        if (pulse && (((p->mb>>6)&077)&1)) {testPenPending=0;return 1;}
+        if (pulse) {
+            menuScans++;
+            const char *column=getenv("ORBIT_TEST_PEN_COLUMN");
+            if(column && menuScans<=5) {
+                unsigned px=20+128*strtoul(column,NULL,10);
+                testPenRaw=((px/2)<<9)|500;testPenTime=menuScans*40;testPenPending=1;
+            }
+            unsigned mode=0,addr=p->io,done=0;
+            if (addr>=MAXMEM) exit(5);
+            fprintf(lists,"BEGIN %06o\n",addr);
+            for (unsigned i=0;i<4096;i++) {
+                if(addr>=MAXMEM) exit(5);
+                unsigned w=p->core[addr++];
+                fprintf(lists,"%06o\n",w);
+                if (mode==0) {
+                    if(w&02000) {done=1;break;}
+                    mode=(w>>13)&7;
+                } else if(mode==1) mode=(w>>13)&7;
+                else if(mode==4) {if(w&0400000) mode=0;}
+                else if(mode==3) {
+                    for(unsigned k=0;k<3;k++) if(((w>>(12-6*k))&077)==037) {mode=0;break;}
+                } else if(mode==7) {
+                    unsigned op=(w>>16)&3;
+                    if(op!=2) {fprintf(stderr,"Unsupported test subroutine operation %u\n",op);exit(5);}
+                    addr=w&017777;mode=(w>>13)&7;
+                } else {fprintf(stderr,"Unexpected display mode %u\n",mode);exit(5);}
+            }
+            if(!done) {fprintf(stderr,"Unterminated display list\n");exit(5);}
+            fprintf(lists,"END\n");
+        }
+        return 1;
+    }
+    if(dev==016) {if(pulse && ((p->mb>>6)&077)==1)p->io=testPenRaw;return 1;}
+    if(dev==032) {if(pulse)p->io=testPenPending?testPenTime:(p->simtime/1000000)%60000;return 1;}
+    if(dev==017) {
+        if(pulse && ((((p->mb>>6)&077)==1 && testPenPending) || ((p->mb>>6)&077)==2)) p->pc=(p->pc+1)&07777;
+        return 1;
+    }
+    if(dev==007 || dev==026 || dev==027) {
+        fprintf(stderr,"Type 30/33 IOT in Type 340 test\n");exit(5);
+    }
+#endif
+    if (dev == 026 || dev == 027) {
+        if (pulse) p->ios=1;
+        return 1;  /* Event capture only: real Type 33 timing is not simulated. */
+    }
+    if (dev == 007) {
+        if (pulse) {
+            if ((p->mb & 017000) != 02000)
+                fprintf(trace, "%06o %06o %06o\n",p->ac,p->io,p->mb);
+            p->ios=1;
+        }
+        return 1;
+    }
+    if (dev == 002 && tapeMode) {
+        if (pulse) {
+            if (tapeIndex >= tapeCount) { fprintf(stderr,"Tape exhausted\n"); exit(4); }
+            p->io=tape[tapeIndex++];
+            p->ios=1;
+        }
+        return 1;
+    }
+    if (dev != 074 && dev != 054 && dev != 056) {
+        fprintf(stderr, "Forbidden device IOT %02o in CPU-only test\n", dev);
+        exit(4);
+    }
+    return 0; /* EEM/LEM, LSM, CBS are handled by the original CPU. */
+}
+
+static void load(PDP1 *p, const char *path)
+{
+    FILE *f = fopen(path,"r");
+    unsigned a,w;
+    if (!f) { perror(path); exit(2); }
+    while (fscanf(f,"%o: %o",&a,&w)==2) {
+        if (a >= MAXMEM || w > WORDMASK) { fprintf(stderr,"Bad image\n"); exit(2); }
+        p->core[a]=w;
+    }
+    fclose(f);
+}
+
+int main(int argc, char **argv)
+{
+    static PDP1 p;
+    trace=fopen("points.trace","w");
+    if (!trace) return 2;
+    events=fopen("events.trace","w");
+    if (!events) return 2;
+    lists=fopen("lists.trace","w");
+    if (!lists) return 2;
+    if (argc != 5 && argc != 6) { fprintf(stderr,"cpu_runner image.mem input.mem output.mem start_octal [loader.words]\n"); return 2; }
+    load(&p,argv[1]);
+    if (argc==6) {
+        FILE *f=fopen(argv[5],"r");
+        if (!f) { perror(argv[5]); return 2; }
+        while (tapeCount<sizeof(tape)/sizeof(tape[0]) && fscanf(f,"%o",&tape[tapeCount])==1) tapeCount++;
+        fclose(f); tapeMode=1;
+    } else load(&p,argv[2]);
+    /* Disable every PDP-1D extension: only the frozen original ISA is allowed. */
+    lailiaEnabled=core1DEnabled=all1DEnabled=false;
+    p.muldiv_sw=1;
+    if (getenv("ORBIT_SENSE_SWITCHES")) p.ss=strtoul(getenv("ORBIT_SENSE_SWITCHES"),NULL,0);
+    unsigned start=(unsigned)strtoul(argv[4],NULL,8);
+    p.ta=tapeMode ? 07751 : (start&07777); p.eta=tapeMode ? 0 : (start&0170000); p.extend_sw=1;
+#ifdef CPU_RUNNER_SETUP
+    CPU_RUNNER_SETUP(&p);
+#endif
+    p.start_sw=1; spec(&p); p.start_sw=0;
+    uint64_t cycles=0;
+    int injected=!tapeMode;
+    while (p.run && cycles<RUNNER_CYCLE_LIMIT) {
+        if (!injected && !p.cyc && !p.bc && (p.epc|p.pc)==start) {
+            load(&p,argv[2]); injected=1;
+        }
+        p.simtime += 5000; /* main.c advances the 5 us memory-cycle time. */
+        cycle(&p); cycles++;
+    }
+    if (p.run) { fprintf(stderr,"Cycle budget exceeded at %06o\n",p.epc|p.pc); return 3; }
+    if (tapeMode && (!injected || tapeIndex!=tapeCount)) {
+        fprintf(stderr,"Loader failed: injected=%d words=%u/%u\n",injected,tapeIndex,tapeCount); return 3;
+    }
+    FILE *f=fopen(argv[3],"w");
+    if (!f) { perror(argv[3]); return 2; }
+    for(unsigned a=0;a<MAXMEM;a++) fprintf(f,"%06o: %06o\n",a,p.core[a]);
+    fclose(f);
+    fclose(trace);
+    fclose(events);
+    fclose(lists);
+    printf("cycles=%llu simulated_ns=%llu pc=%06o overflow=%d extend=%d\n",
+        (unsigned long long)cycles,(unsigned long long)p.simtime,p.epc|p.pc,p.ov1,p.exd);
+    return 0;
+}

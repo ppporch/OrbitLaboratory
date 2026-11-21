@@ -1,0 +1,152 @@
+// Dimensionless two-body motion: mu=1; initial r=1; dt=1/16.
+// Position and staggered velocity*dt are signed one's-complement Q14.
+// Drift/kick leapfrog: initial v is the forward half-step velocity.
+// MUL gives a signed 34-bit product; force kicks round from IO to nearest.
+reset_circle,dap reset_ret
+        lac [0d1024]
+        dac vy
+        jmp reset_common
+reset_ellipse,dap reset_ret
+        lac [0d768]
+        dac vy
+reset_common,lac [0d16384]
+        dac px
+        dzm py
+        lac [-0d32]
+        dac vx
+        dzm status
+        dzm steps
+        lac [0d64]
+        dac ax
+        dzm ay
+        jsp update_screen
+        jmp i reset_ret
+
+advance,dap advance_ret
+        lac status
+        sza
+        jmp i advance_ret
+        lac px
+        add vx
+        dac px
+        lac py
+        add vy
+        dac py
+        mul py
+        dac radius2
+        lac px
+        mul px
+        add radius2
+        sar 4s
+        dac radius_index
+        sub [0d8]               // r < .25: central body's surface
+        sma
+        jmp check_edge
+        law 1
+        dac status
+        jmp stop_motion
+check_edge,lac radius_index
+        sub [0d648]             // r >= 2.25: outside the fixed view
+        sma
+        jmp leave_view
+        lac radius_index
+        add [force_table:2]
+        dac force_ptr
+        eem
+        lac i force_ptr
+        lem
+        dac force_factor
+        lac px
+        mul force_factor
+        jda round_product
+        dac ax
+        lac py
+        mul force_factor
+        jda round_product
+        dac ay
+        lac vx
+        sub ax
+        dac vx
+        lac vy
+        sub ay
+        dac vy
+stop_motion,idx steps
+        jsp update_screen
+        jmp i advance_ret
+leave_view,law 2
+        dac status
+        jmp stop_motion
+
+// Screen projection: 160 pixels per physical unit, up to one pixel rounding.
+project,dap project_ret
+        lac px
+        sar 7s
+        dac screen_x
+        lac px
+        sar 9s
+        add screen_x
+        add [0d512]
+        dac screen_x
+        lac py
+        sar 7s
+        dac screen_y
+        lac py
+        sar 9s
+        add screen_y
+        add [0d530]
+        dac screen_y
+        jmp i project_ret
+update_screen,dap screen_ret
+        // Preserve the last valid marker when motion leaves the viewport.
+        lac status
+        sad [2]
+        jmp i screen_ret
+        jsp project
+        jmp i screen_ret
+// Round the signed product high word to nearest, ties away from zero.
+// MUL leaves low magnitude bits shifted left one in IO. Its bit 0 is
+// the rounding bit; all IO bits are complemented for a negative product.
+round_product,0
+        dap round_ret
+        lac round_product
+        dac product_hi
+        dio product_low
+        spa
+        jmp negative_product
+        lac product_low
+        and [0400000]
+        sza
+        idx product_hi
+        lac product_hi
+        jmp i round_ret
+negative_product,lac product_low
+        cma
+        and [0400000]
+        sza i
+        jmp product_done
+        lac product_hi
+        sub [1]
+        dac product_hi
+product_done,lac product_hi
+        jmp i round_ret
+round_ret,0
+product_hi,0
+product_low,0
+reset_ret,0
+advance_ret,0
+project_ret,0
+screen_ret,0
+px,0
+py,0
+vx,0
+vy,0
+ax,0
+ay,0
+radius2,0
+radius_index,0
+force_factor,0
+force_ptr,0
+status,0                        // 0 active, 1 impact, 2 outside view
+steps,0
+screen_x,0
+screen_y,0

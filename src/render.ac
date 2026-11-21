@@ -1,0 +1,118 @@
+// Build/replay only through P1GL's owning frame API. Refresh finishes before
+// the next scene is changed. Only the current marker is drawn; the viewer
+// supplies phosphor persistence. No software history or fading work remains.
+render,dap render_ret
+        eem
+        jsp i [instrument_update:3]
+        lem
+        jda gframe_begin
+        frame_buffer
+        0d1650
+        // The bundled frame builder resets metadata and setup, not list data.
+        // Keep the completed immutable prefix in place; only its tail changes.
+        lac static_end
+        sza
+        jmp reuse_prefix
+        jda gvtext
+        0d356; 0d952; 0; title
+        law planet_outline
+        dac outline_ptr
+        law i 0d16
+        dac outline_left
+outline_loop,lac i outline_ptr
+        dac lx0
+        idx outline_ptr
+        lac i outline_ptr
+        dac ly0
+        idx outline_ptr
+        lac i outline_ptr
+        dac lx1
+        idx outline_ptr
+        lac i outline_ptr
+        dac ly1
+        idx outline_ptr
+        jsp draw_line
+        isp outline_left
+        jmp outline_loop
+        jda gtext
+        0d190; 0d110; 1; controls_one
+        jda gtext
+        0d190; 0d78; 1; controls_two
+        lac gf_write
+        dac instrument_start
+        jsp draw_instrument
+        lac gf_write
+        dac static_end
+        jmp draw_craft
+reuse_prefix,dac gf_write
+draw_craft,lac screen_x
+        sub [4]
+        dac lx0
+        lac screen_x
+        add [4]
+        dac lx1
+        lac screen_y
+        dac ly0
+        dac ly1
+        jsp draw_line
+        lac screen_x
+        dac lx0
+        dac lx1
+        lac screen_y
+        sub [4]
+        dac ly0
+        lac screen_y
+        add [4]
+        dac ly1
+        jsp draw_line
+label_ready,
+        // Select using explicit branches; strings are addresses in field 0.
+        lac status
+        sza
+        jmp choose_stop
+        lac run_enabled
+        sza i
+        jmp choose_pause
+        law running_label
+        jmp chose
+choose_pause,law paused_label
+        jmp chose
+choose_stop,lac status
+        sad [1]
+        jmp choose_impact
+        law edge_label
+        jmp chose
+choose_impact,law impact_label
+chose,  dac state_label
+        jda gtext
+        0d420; 0d160; 1
+state_label,0
+        jsp gframe_end
+        jmp i render_ret
+draw_instrument,dap instrument_ret
+        jda gtext
+        0d300; 0d900; 1; instrument_text
+        jmp i instrument_ret
+instrument_ret,0
+instrument_start,0
+instrument_text,ascii "R/R0 0.00  V/V0 0.00  BOUND   "
+draw_line,dap line_ret
+        jda gline
+lx0,0
+ly0,0
+lx1,0
+ly1,0
+        jmp i line_ret
+render_ret,0
+static_end,0
+line_ret,0
+outline_ptr,0
+outline_left,0
+title,ascii "ORBIT LABORATORY"
+running_label,ascii "RUNNING"
+paused_label,ascii "PAUSED"
+impact_label,ascii "IMPACT - RESET"
+edge_label,ascii "LEFT VIEW - RESET"
+controls_one,ascii "S1 RUN  S2 STEP  S3 SLOWER  S4 FASTER"
+controls_two,ascii "S5 CIRCLE  S6 ELLIPSE - PULSE"
+#include "../generated/outlines.ac"

@@ -1,0 +1,234 @@
+// Native Type 340 display-list ownership. All complete command groups leave
+// POINT mode selected, so immediate-mode chunks can be safely flushed/restarted.
+// Faults: 1 arguments, 2 capacity, 3 lifecycle, 4 display edge/stop error.
+// The CPU waits for display completion before returning or reusing the list.
+#include "type340.ah"
+
+gframe_begin, 0
+        dac gf_begin_ret
+        lac i gf_begin_ret
+        dac gf_base
+        idx gf_begin_ret
+        lac i gf_begin_ret
+        dac gf_capacity
+        idx gf_begin_ret
+        dzm gf_fault
+        dzm gf_ready
+        dzm gf_points
+        dzm gf_chars
+        dzm gf_vectors
+        law 1
+        dac gf_recording
+        lac gf_depth
+        sza
+        jmp gf_begin_bad
+        lac gf_base
+        spa
+        jmp gf_begin_bad
+        sub [07777]
+        sma sza
+        jmp gf_begin_bad
+        lac gf_capacity
+        sub [3]
+        spa
+        jmp gf_begin_bad
+        lac gf_capacity
+        sub [010000]
+        sma sza
+        jmp gf_begin_bad
+        lac gf_base
+        add gf_capacity
+        sub [010000]
+        sma sza
+        jmp gf_begin_bad
+        lac gf_base
+        dac gf_active
+        lac gf_capacity
+        dac gf_active_size
+        jsp gf_reset_list
+        jmp i gf_begin_ret
+gf_begin_bad,
+        law 1
+        dac gf_fault
+        jmp i gf_begin_ret
+
+gframe_end,
+        dap gf_end_ret
+        lac gf_recording
+        sza i
+        jmp gf_end_bad
+        lac gf_depth
+        sza
+        jmp gf_end_bad
+        dzm gf_recording
+        lac gf_fault
+        sza
+        jmp gf_end_ret
+        cla                 // POINT X(0), no show, next PARAMETER
+        dac i gf_write
+        idx gf_write
+        lac [T_HALT]
+        dac i gf_write
+        lac gf_write
+        sub gf_base
+        add [1]
+        dac gf_used
+        law 1
+        dac gf_ready
+        lac gf_fault
+gf_end_ret, jmp .
+gf_end_bad,
+        law 3
+        dac gf_fault
+        jmp gf_end_ret
+
+gframe_refresh,
+        dap gf_refresh_ret
+        lac gf_recording
+        sza
+        jmp gf_refresh_bad
+        lac gf_fault
+        sza
+        jmp gf_refresh_ret
+        lac gf_ready
+        sza i
+        jmp gf_refresh_bad
+        lac gf_base
+        dac gf_run_address
+        jsp gf_run
+        lac gf_fault
+gf_refresh_ret, jmp .
+gf_refresh_bad,
+        law 3
+        dac gf_fault
+        jmp gf_refresh_ret
+
+// Enter/leave a potentially nested drawing primitive. Immediate calls use a
+// small private scratch list, leaving the retained scene descriptor untouched.
+gf_enter,
+        dap gf_enter_ret
+        lac gf_depth
+        sza
+        jmp gf_nested
+        lac gf_recording
+        sza
+        jmp gf_nested
+        law gf_scratch
+        dac gf_active
+        law 0d64
+        dac gf_active_size
+        jsp gf_reset_list
+gf_nested,
+        idx gf_depth
+gf_enter_ret, jmp .
+gf_leave,
+        dap gf_leave_ret
+        lac gf_depth
+        sub [1]
+        dac gf_depth
+        sza
+        jmp gf_leave_ret
+        lac gf_recording
+        sza
+        jmp gf_leave_ret
+        lac gf_fault
+        sza
+        jmp gf_leave_ret
+        jsp gf_flush
+gf_leave_ret, jmp .
+
+gf_reset_list,
+        dap gf_reset_ret
+        lac gf_active
+        dac gf_write
+        add gf_active_size
+        sub [2]            // reserve POINT -> PARAMETER escape plus HALT
+        dac gf_limit
+        lac [T_SETUP]
+        dac i gf_write
+        idx gf_write
+gf_reset_ret, jmp .
+
+// gf_need is an atomic command-group size, <=5 in current primitives.
+gf_reserve,
+        dap gf_reserve_ret
+        lac gf_fault
+        sza
+        jmp gf_reserve_ret
+        lac gf_write
+        add gf_need
+        sub gf_limit
+        sma sza
+        jmp gf_no_space
+        jmp gf_reserve_ret
+gf_no_space,
+        lac gf_recording
+        sza
+        jmp gf_overflow
+        jsp gf_flush
+        lac gf_fault
+        sza
+        jmp gf_reserve_ret
+        jsp gf_reset_list
+        jmp gf_reserve_ret
+gf_overflow,
+        law 2
+        dac gf_fault
+gf_reserve_ret, jmp .
+gf_flush,
+        dap gf_flush_ret
+        cla                 // POINT X(0), no show, next PARAMETER
+        dac i gf_write
+        idx gf_write
+        lac [T_HALT]
+        dac i gf_write
+        lac gf_active
+        dac gf_run_address
+        jsp gf_run
+gf_flush_ret, jmp .
+
+gf_run,
+        dap gf_run_ret
+#ifdef P1GL_DISPLAY_ENTRY
+        lio [P1GL_DISPLAY_ENTRY]
+#else
+        lio gf_run_address
+#endif
+        iot 015            // DLA: start the native display processor
+gf_wait,
+#ifdef P1GL_POLL_HOOK
+        P1GL_POLL_HOOK
+#endif
+        iot 0217           // DSS: stopped?
+        jmp gf_wait
+        iot 0417           // DSV: vertical edge error?
+        jmp gf_check_h
+        jmp gf_device_error
+gf_check_h,
+        iot 01017          // DSH: horizontal edge error?
+        jmp gf_run_ret
+gf_device_error,
+        law 4
+        dac gf_fault
+gf_run_ret, jmp .
+
+gf_recording, 0
+gf_fault, 0
+gf_ready, 0
+gf_points, 0
+gf_chars, 0
+gf_vectors, 0
+gf_base, 0
+gf_capacity, 0
+gf_used, 0
+gf_depth, 0
+gf_active, 0
+gf_active_size, 0
+gf_write, 0
+gf_limit, 0
+gf_need, 0
+gf_begin_ret, 0
+gf_run_address, 0
+// Scratch storage is private and never overlaps a caller-owned retained list.
+gf_scratch, 0
+gf_scratch + 0d64/

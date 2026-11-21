@@ -1,0 +1,34 @@
+{
+  "samples": 160,
+  "min_ms": 39.8546060314402,
+  "median_ms": 41.193811455741525,
+  "max_ms": 56.986912968568504,
+  "mean_ms": 43.4778301998449,
+  "five_frame_means": [
+    41.38221760149463,
+    52.38545819520368,
+    41.235333617805736,
+    41.201172658475116,
+    41.18496892624535
+  ],
+  "status": {
+    "frames": 176,
+    "steps": 177,
+    "fault": 0,
+    "status": 0,
+    "gf_fault": 0,
+    "gf_used": 1496,
+    "buffer_guard": 42798,
+    "run_enabled": 32,
+    "step_request": 0,
+    "pen_pending": 0,
+    "menu_action": 0,
+    "px": 2472,
+    "py": 246047,
+    "vx": 1011,
+    "vy": 188,
+    "instruments": "R/R0 0.99  V/V0 1.00  BOUND   ",
+    "running": true,
+    "sense_switches_octal": "50"
+  }
+}

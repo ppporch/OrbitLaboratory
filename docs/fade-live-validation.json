@@ -1,0 +1,26 @@
+{
+  "frames": 556,
+  "steps": 557,
+  "fault": 0,
+  "status": 0,
+  "gf_fault": 0,
+  "gf_used": 1730,
+  "buffer_guard": 42798,
+  "trail_count": 64,
+  "winding_count": 1433,
+  "visible_trail_segments": 24,
+  "visible_intensities": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "running": true,
+  "seconds": 12.001382777001709,
+  "frames_delta": 150,
+  "mean_frame_ms": 80.00921851334472
+}

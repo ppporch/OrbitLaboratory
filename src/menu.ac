@@ -1,0 +1,72 @@
+// P1GL invokes this while waiting for completion. Read the pen, save a mailbox
+// and resume the paused display. Library calls and actions occur only after
+// the display finishes, so mutable menu/list words are never edited live.
+pen_poll,dap pen_pollret
+        iot 0117              // DSP: light-pen hit?
+        jmp i pen_pollret
+        iot 0116              // DRC: coordinates in IO
+        dio pen_word
+        iot 32                // BBN milliseconds
+        dio pen_time
+        law 1
+        dac pen_pending
+        iot 0115              // DRS: continue after the hit
+        jmp i pen_pollret
+menu_init,dap menu_initret
+        cla
+        farjda(pmInit:4)
+        lem
+        dzm pen_pending
+        jmp i menu_initret
+menu_service,dap menu_serviceret
+        lac pen_pending
+        sza i
+        jmp menu_tick
+        dzm pen_pending
+        lio pen_word
+        lac pen_time
+        farjda(pmHit:4)
+        lem
+        dac menu_action
+        sza i
+        jmp menu_tick
+        sad [1]
+        jmp menu_toggle
+        sad [2]
+        jmp menu_step
+        sad [3]
+        jmp menu_slower
+        sad [4]
+        jmp menu_faster
+        sad [5]
+        jmp menu_circle
+        sad [6]
+        jmp menu_ellipse
+        jmp menu_tick
+menu_toggle,lac run_enabled
+        xor [040]
+        dac run_enabled
+        jmp menu_tick
+menu_step,law 1
+        dac step_request
+        jmp menu_tick
+menu_slower,jsp slower
+        jmp menu_tick
+menu_faster,jsp faster
+        jmp menu_tick
+menu_circle,jsp reset_circle
+        jmp menu_tick
+menu_ellipse,jsp reset_ellipse
+menu_tick,lac frame_start
+        farjda(pmTick:4)
+        lem
+        jmp i menu_serviceret
+pen_pollret,0
+menu_initret,0
+menu_serviceret,0
+pen_word,0
+pen_time,0
+pen_pending,0
+menu_action,0
+run_enabled,0
+step_request,0

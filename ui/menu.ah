@@ -1,0 +1,8 @@
+// Bill's resident PENMENU library; six independent bar buttons.
+#include <memory.ah>
+#include <TYPE340/type340alt.ah>
+#define PM_BAR(L,B) B(run,"RunStop",1) B(step,"Step",2) B(slow,"Slower",3) B(fast,"Faster",4) B(circle,"Circle",5) B(ellipse,"Ellipse",6)
+#define PM_RETURN menu_resume:1
+#include <PENMENU/penmenu.ah>
+#define P1GL_DISPLAY_ENTRY pmBar:1
+#define P1GL_POLL_HOOK jsp pen_poll

@@ -1,0 +1,18 @@
+{
+  "frames": 282,
+  "steps": 283,
+  "fault": 0,
+  "status": 0,
+  "gf_fault": 0,
+  "gf_used": 1922,
+  "buffer_guard": 42798,
+  "px": 8366,
+  "py": 248210,
+  "trail_count": 64,
+  "static_end": 3541,
+  "running": true,
+  "sense_switches_octal": "50",
+  "measured_seconds": 15.000675859977491,
+  "frames_delta": 282,
+  "mean_frame_ms": 53.19388602828898
+}

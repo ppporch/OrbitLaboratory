@@ -1,0 +1,50 @@
+[
+  {
+    "case": "pause",
+    "steps": 1,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "run",
+    "steps": 7,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "step",
+    "steps": 1,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "slower",
+    "steps": 0,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "faster",
+    "steps": 0,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "circle",
+    "steps": 0,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "ellipse",
+    "steps": 0,
+    "held_pen_fires_once": true,
+    "frames": 8
+  },
+  {
+    "case": "off_menu",
+    "steps": 0,
+    "held_pen_fires_once": true,
+    "frames": 8
+  }
+]

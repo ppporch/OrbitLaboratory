@@ -1,0 +1,33 @@
+[
+  {
+    "case": "circle",
+    "text": "R/R0 1.00  V/V0 1.00  BOUND   "
+  },
+  {
+    "case": "ellipse",
+    "text": "R/R0 1.00  V/V0 0.75  BOUND   "
+  },
+  {
+    "case": "escape",
+    "text": "R/R0 1.00  V/V0 1.50  ESCAPING"
+  },
+  {
+    "case": "near_escape",
+    "text": "R/R0 1.00  V/V0 1.41  NEAR ESC"
+  },
+  {
+    "case": "double_radius",
+    "text": "R/R0 2.00  V/V0 1.00  NEAR ESC"
+  },
+  {
+    "case": "quadrant_accuracy",
+    "cases": 24,
+    "radius_error_below": 0.016,
+    "speed_error_below": 0.025
+  },
+  {
+    "case": "throttled_updates",
+    "frames_per_sample": 5,
+    "physics_unchanged": true
+  }
+]
